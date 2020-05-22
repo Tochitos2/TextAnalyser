@@ -1,13 +1,13 @@
 import java.io.IOException;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Analyser {
-    private static List<String> commonWords;
-    private static String commonWordsPath = "CommonWords.txt";
+    private List<String> commonWords;
+    private String commonWordsPath = "CommonWords.txt";
+    private HashMap<String, MutableInt> words;
+    private LinkedHashMap<String, Integer> sortedWords;
 
-    public static List<String> getCommonWords()
-            throws IOException {
+    public List<String> getCommonWords(){
 
         Scanner scanner = new Scanner(commonWordsPath);
 
@@ -17,4 +17,28 @@ public class Analyser {
 
         return commonWords;
     }
+
+    public void addFile(String path){
+
+        Scanner scanner = new Scanner(path);
+        while(scanner.hasNext()){
+            String word = scanner.nextLine().replaceAll("[^a-zA-Z'-]", "");
+            MutableInt wordCount = words.get(word);
+            if(wordCount == null){
+                words.put(word, new MutableInt());
+            }
+            else{
+                wordCount.increment();
+            }
+        }
+    }
+
+    class MutableInt {
+        int value = 1;
+        public void increment () { ++value;      }
+        public int  get ()       { return value; }
+    }
+
 }
+
+
