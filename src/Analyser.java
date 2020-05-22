@@ -4,7 +4,7 @@ import java.util.*;
 public class Analyser {
     private List<String> commonWords;
     private String commonWordsPath = "CommonWords.txt";
-    private HashMap<String, MutableInt> words;
+    private HashMap<String, Integer> words;
     private LinkedHashMap<String, Integer> sortedWords;
 
     public List<String> getCommonWords(){
@@ -23,20 +23,9 @@ public class Analyser {
         Scanner scanner = new Scanner(path);
         while(scanner.hasNext()){
             String word = scanner.nextLine().replaceAll("[^a-zA-Z'-]", "");
-            MutableInt wordCount = words.get(word);
-            if(wordCount == null){
-                words.put(word, new MutableInt());
-            }
-            else{
-                wordCount.increment();
-            }
-        }
-    }
+            words.merge(word, 1, Integer::sum);
 
-    class MutableInt {
-        int value = 1;
-        public void increment () { ++value;      }
-        public int  get ()       { return value; }
+        }
     }
 
 }
