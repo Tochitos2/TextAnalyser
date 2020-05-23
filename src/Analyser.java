@@ -1,5 +1,5 @@
-import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Analyser {
     private List<String> commonWords;
@@ -24,8 +24,18 @@ public class Analyser {
         while(scanner.hasNext()){
             String word = scanner.nextLine().replaceAll("[^a-zA-Z'-]", "");
             words.merge(word, 1, Integer::sum);
-
         }
+    }
+
+    public LinkedHashMap getSortedList(){
+        sortedWords =  words.entrySet()
+                .stream().sorted(Map.Entry.comparingByValue())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+        return sortedWords;
     }
 
 }
