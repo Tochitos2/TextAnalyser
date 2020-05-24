@@ -45,16 +45,8 @@ public class Analyser {
         }
 
         while(scanner.hasNext()){
-            String word = scanner.next().replaceAll("[^a-zA-Z'-]", "");
-            if(word.length() > 1) {
-                StringBuilder casedWord = new StringBuilder();
-                casedWord.append(word.substring(0,1).toUpperCase());
-                casedWord.append(word.substring(1).toLowerCase());
-                word = casedWord.toString();
-            }
-            else {
-                word = word.toUpperCase();
-            }
+            String word = capitalise(scanner.next().replaceAll("[^a-zA-Z'-]", ""));
+
             // If not a common word and contains at least 1 word character, then add.
             if(!commonWords.contains(word) && word.matches(".*\\w+.*")) {
                 words.merge(word, 1, Integer::sum);
@@ -72,6 +64,20 @@ public class Analyser {
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
         return sortedWords;
+    }
+
+    private String capitalise(String word)
+    {
+        if(word.length() > 1) {
+            StringBuilder casedWord = new StringBuilder();
+            casedWord.append(word.substring(0,1).toUpperCase());
+            casedWord.append(word.substring(1).toLowerCase());
+            word = casedWord.toString();
+        }
+        else {
+            word = word.toUpperCase();
+        }
+        return word;
     }
 
     public int getWordCount(){
