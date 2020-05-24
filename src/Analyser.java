@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 
 public class Analyser {
     private ArrayList<String> commonWords;
-    private String commonWordsPath = "CommonWords.txt";
+    private String commonWordsPath = "src/CommonWords.txt";
     private HashMap<String, Integer> words;
     private LinkedHashMap<String, Integer> sortedWords;
     private int wordCount;
@@ -20,7 +20,14 @@ public class Analyser {
 
     public void LoadCommonWords(){
 
-        Scanner scanner = new Scanner(commonWordsPath);
+        String currentDirectory = System.getProperty("user.dir");
+        File file = new File(commonWordsPath);
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(file);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
         while(scanner.hasNextLine()){
             commonWords.add(scanner.nextLine());
@@ -39,7 +46,17 @@ public class Analyser {
 
         while(scanner.hasNext()){
             String word = scanner.next().replaceAll("[^a-zA-Z'-]", "");
-            if(!commonWords.contains(word)) {
+            if(word.length() > 1) {
+                StringBuilder casedWord = new StringBuilder();
+                casedWord.append(word.substring(0,1).toUpperCase());
+                casedWord.append(word.substring(1).toLowerCase());
+                word = casedWord.toString();
+            }
+            else {
+                word = word.toUpperCase();
+            }
+            // If not a common word and contains at least 1 word character, then add.
+            if(!commonWords.contains(word) && word.matches(".*\\w+.*")) {
                 words.merge(word, 1, Integer::sum);
                 wordCount++;
             }
@@ -48,7 +65,7 @@ public class Analyser {
 
     public LinkedHashMap getSortedList(){
         sortedWords =  words.entrySet()
-                .stream().sorted(Map.Entry.comparingByValue())
+                .stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
