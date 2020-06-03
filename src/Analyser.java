@@ -11,6 +11,7 @@ public class Analyser {
     private final ArrayList<String> commonWords;
     private ArrayList<String> blackList;
     private ArrayList<String> whiteList;
+    private final ArrayList<String> documentPaths;
     private final String commonWordsPath;
     private final HashMap<String, Integer> words;
     private LinkedHashMap<String, Integer> sortedWords;
@@ -20,6 +21,7 @@ public class Analyser {
 
     public Analyser(){
         commonWords = new ArrayList<String>();
+        documentPaths = new ArrayList<String>();
         blackList = new ArrayList<String>();
         whiteList= new ArrayList<String>();
         words = new HashMap<String, Integer>();
@@ -46,74 +48,92 @@ public class Analyser {
         }
     }
 
+
     public void addFile(String path, FileType fileType) {
 
-        File file = new File(path);
-        Scanner scanner = null;
-        try {
-            scanner = new Scanner(file);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        // Only read the file if it's not the document, those should be read at final step with filters in place.
+        if(fileType != FileType.DOCUMENT) {
+            File file = new File(path);
+            Scanner scanner = null;
+            try {
+                scanner = new Scanner(file);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            switch (fileType){
 
-        switch (fileType){
-            case DOCUMENT:
-                while(scanner != null && scanner.hasNext()){
-                    String word = capitalise(scanner.next());
-
-                    // If restrictions are applied words must be parsed for speech marks.
-                    if(restriction == Restriction.DIALOGUE || restriction == Restriction.NARRATION) {
-                        StringBuilder newWord = new StringBuilder();
-                        for (int i = 0; i < word.length(); i++) {
-                            if (word.charAt(i) == '\"') {
-                                inSpeech = !inSpeech; //Flip whether in dialogue on speech mark.
-                            }
-                            // Builds the word according to whether the analyser is set to count dialogue or vice versa.
-                            if (restriction == Restriction.DIALOGUE && inSpeech) {
-                                newWord.append(word.charAt(i));
-                            }else if(restriction == Restriction.NARRATION && !inSpeech){
-                                newWord.append(word.charAt(i));
-                            }
-                        }
-                        word = newWord.toString();
+                case WHITELIST:
+                    while(scanner != null && scanner.hasNext()) {
+                        String word = capitalise(scanner.next());
+                        whiteList.add(word);
                     }
-                    // Filter out most punctuation.
-                    word = word.replaceAll("[^a-zA-Z'-]", "");
-                    // If not a common word, fits lists and contains at least 1 word character, then add.
-                    if(!commonWords.contains(word) // Not a common word
-                            && word.matches(".*\\w+.*") // contains at least one word type character
-                            && !blackList.contains(word) // Not in blacklist
-                            && (whiteList.size() == 0 || whiteList.contains(word))) { // Whitelist empty or contains word
-                        words.merge(word, 1, Integer::sum);
-                        wordCount++;
+                    break;
+
+                case BLACKLIST:
+                    while(scanner != null && scanner.hasNext()) {
+                        String word = capitalise(scanner.next());
+                        blackList.add(word);
                     }
-                }
-                // If the document ends with a single open speech mark there may be missing speech marks
-                // in the text, which would throw off the tracking of dialogue.
-                if(restriction != Restriction.TEXT && inSpeech){
-                    System.out.println("Document ends with a trailing speech mark. Possible punctuation error in text." +
-                            "\nResults may be inaccurate.");
-                }
-                break;
-
-            case WHITELIST:
-                while(scanner != null && scanner.hasNext()) {
-                    String word = capitalise(scanner.next());
-                    whiteList.add(word);
-                }
-                break;
-
-            case BLACKLIST:
-                while(scanner != null && scanner.hasNext()) {
-                    String word = capitalise(scanner.next());
-                    blackList.add(word);
-                }
-                break;
+                    break;
+            }
         }
-
+        else{
+            documentPaths.add(path);
+        }
     }
 
-    public LinkedHashMap getSortedList(){
+    public void analyse(){
+        for(String path: documentPaths){
+
+            // Scanner initialisation
+            File file = new File(path);
+            Scanner scanner = null;
+            try {
+                scanner = new Scanner(file);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            // scan in words applying appropriate filters.
+            while(scanner != null && scanner.hasNext()){
+                // Filters out punctuation then capitalises in text case.
+                String word = capitalise(scanner.next().replaceAll("[^a-zA-Z'-]", ""));
+
+                // If restrictions are applied words must be parsed for speech marks.
+                if(restriction == Restriction.DIALOGUE || restriction == Restriction.NARRATION) {
+                    StringBuilder newWord = new StringBuilder();
+                    for (int i = 0; i < word.length(); i++) {
+                        if (word.charAt(i) == '\"') {
+                            inSpeech = !inSpeech; //Flip whether in dialogue on speech mark.
+                        }
+                        // Builds the word according to whether the analyser is set to count dialogue or vice versa.
+                        if (restriction == Restriction.DIALOGUE && inSpeech) {
+                            newWord.append(word.charAt(i));
+                        }else if(restriction == Restriction.NARRATION && !inSpeech){
+                            newWord.append(word.charAt(i));
+                        }
+                    }
+                    word = newWord.toString();
+                }
+                // If not a common word, fits lists and contains at least 1 word character, then add.
+                if(!commonWords.contains(word) // Not a common word
+                        && word.matches(".*\\w+.*") // contains at least one word type character
+                        && !blackList.contains(word) // Not in blacklist
+                        && (whiteList.size() == 0 || whiteList.contains(word))) { // Whitelist empty or contains word
+                    words.merge(word, 1, Integer::sum);
+                    wordCount++;
+                }
+            }
+            // If the document ends with a single open speech mark there may be missing speech marks
+            // in the text, which would throw off the tracking of dialogue.
+            if(restriction != Restriction.TEXT && inSpeech){
+                System.out.println("Document ends with a trailing speech mark. Possible punctuation error in text." +
+                        "\nResults may be inaccurate.");
+            }
+        }
+    }
+
+    public LinkedHashMap<String, Integer> getSortedList(){
         sortedWords =  words.entrySet()
                 .stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .collect(Collectors.toMap(

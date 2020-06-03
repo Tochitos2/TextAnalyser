@@ -1,4 +1,3 @@
-package PACKAGE_NAME;
-
 public enum FileType {
+    DOCUMENT, WHITELIST, BLACKLIST
 }
