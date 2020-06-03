@@ -1,12 +1,18 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class Analyser {
-    private ArrayList<String> commonWords;
-    private String commonWordsPath;
-    private HashMap<String, Integer> words;
+    private final ArrayList<String> commonWords;
+    private ArrayList<String> blackList;
+    private ArrayList<String> whiteList;
+    private final String commonWordsPath;
+    private final HashMap<String, Integer> words;
     private LinkedHashMap<String, Integer> sortedWords;
     private int wordCount;
     private boolean inSpeech;
@@ -14,6 +20,8 @@ public class Analyser {
 
     public Analyser(){
         commonWords = new ArrayList<String>();
+        blackList = new ArrayList<String>();
+        whiteList= new ArrayList<String>();
         words = new HashMap<String, Integer>();
         sortedWords = new LinkedHashMap<String, Integer>();
         commonWordsPath = "src/CommonWords.txt";
@@ -25,7 +33,6 @@ public class Analyser {
 
     public void LoadCommonWords(){
 
-        String currentDirectory = System.getProperty("user.dir");
         File file = new File(commonWordsPath);
         Scanner scanner = null;
         try {
@@ -34,12 +41,12 @@ public class Analyser {
             e.printStackTrace();
         }
 
-        while(scanner.hasNextLine()){
+        while(scanner != null && scanner.hasNextLine()){
             commonWords.add(scanner.nextLine());
         }
     }
 
-    public void addFile(String path) {
+    public void addFile(String path, FileType fileType) {
 
         File file = new File(path);
         Scanner scanner = null;
@@ -49,39 +56,61 @@ public class Analyser {
             e.printStackTrace();
         }
 
-        while(scanner.hasNext()){
-            String word = capitalise(scanner.next());
+        switch (fileType){
+            case DOCUMENT:
+                while(scanner != null && scanner.hasNext()){
+                    String word = capitalise(scanner.next());
 
-            // If restrictions are applied words must be parsed for speech marks.
-            if(restriction == Restriction.DIALOGUE || restriction == Restriction.NARRATION) {
-                StringBuilder newWord = new StringBuilder();
-                for (int i = 0; i < word.length(); i++) {
-                    if (word.charAt(i) == '\"') {
-                        inSpeech = !inSpeech; //Flip whether in dialogue on speech mark.
+                    // If restrictions are applied words must be parsed for speech marks.
+                    if(restriction == Restriction.DIALOGUE || restriction == Restriction.NARRATION) {
+                        StringBuilder newWord = new StringBuilder();
+                        for (int i = 0; i < word.length(); i++) {
+                            if (word.charAt(i) == '\"') {
+                                inSpeech = !inSpeech; //Flip whether in dialogue on speech mark.
+                            }
+                            // Builds the word according to whether the analyser is set to count dialogue or vice versa.
+                            if (restriction == Restriction.DIALOGUE && inSpeech) {
+                                newWord.append(word.charAt(i));
+                            }else if(restriction == Restriction.NARRATION && !inSpeech){
+                                newWord.append(word.charAt(i));
+                            }
+                        }
+                        word = newWord.toString();
                     }
-                    // Builds the word according to whether the analyser is set to count dialogue or vice versa.
-                    if (restriction == Restriction.DIALOGUE && inSpeech) {
-                        newWord.append(word.charAt(i));
-                    }else if(restriction == Restriction.NARRATION && !inSpeech){
-                        newWord.append(word.charAt(i));
+                    // Filter out most punctuation.
+                    word = word.replaceAll("[^a-zA-Z'-]", "");
+                    // If not a common word, fits lists and contains at least 1 word character, then add.
+                    if(!commonWords.contains(word) // Not a common word
+                            && word.matches(".*\\w+.*") // contains at least one word type character
+                            && !blackList.contains(word) // Not in blacklist
+                            && (whiteList.size() == 0 || whiteList.contains(word))) { // Whitelist empty or contains word
+                        words.merge(word, 1, Integer::sum);
+                        wordCount++;
                     }
                 }
-                word = newWord.toString();
-            }
-            // Filter out most punctuation.
-            word.replaceAll("[^a-zA-Z'-]", "");
-            // If not a common word and contains at least 1 word character, then add.
-            if(!commonWords.contains(word) && word.matches(".*\\w+.*")) {
-                words.merge(word, 1, Integer::sum);
-                wordCount++;
-            }
+                // If the document ends with a single open speech mark there may be missing speech marks
+                // in the text, which would throw off the tracking of dialogue.
+                if(restriction != Restriction.TEXT && inSpeech){
+                    System.out.println("Document ends with a trailing speech mark. Possible punctuation error in text." +
+                            "\nResults may be inaccurate.");
+                }
+                break;
+
+            case WHITELIST:
+                while(scanner != null && scanner.hasNext()) {
+                    String word = capitalise(scanner.next());
+                    whiteList.add(word);
+                }
+                break;
+
+            case BLACKLIST:
+                while(scanner != null && scanner.hasNext()) {
+                    String word = capitalise(scanner.next());
+                    blackList.add(word);
+                }
+                break;
         }
-        // If the document ends with a single open speech mark there may be missing speech marks
-        // in the text, which would throw off the tracking of dialogue.
-        if(restriction != Restriction.TEXT && inSpeech){
-            System.out.println("Document ends with a trailing speech mark. Possible punctuation error in text." +
-                    "\nResults may be inaccurate.");
-        }
+
     }
 
     public LinkedHashMap getSortedList(){
@@ -98,10 +127,8 @@ public class Analyser {
     private String capitalise(String word)
     {
         if(word.length() > 1) {
-            StringBuilder casedWord = new StringBuilder();
-            casedWord.append(word.substring(0,1).toUpperCase());
-            casedWord.append(word.substring(1).toLowerCase());
-            word = casedWord.toString();
+            word = word.substring(0, 1).toUpperCase() +
+                    word.substring(1).toLowerCase();
         }
         else {
             word = word.toUpperCase();
@@ -114,6 +141,10 @@ public class Analyser {
     }
 
     public void setRestriction(Restriction restriction) { this.restriction = restriction; }
+
+    public void resetWhiteList(){ whiteList = new ArrayList<>(); }
+
+    public void resetBlackList(){ blackList = new ArrayList<>(); }
 
 }
 

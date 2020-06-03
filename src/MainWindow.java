@@ -44,7 +44,7 @@ public class MainWindow extends JFrame {
         Border fileBorder = BorderFactory.createTitledBorder("Files");
         filePanel.setBorder(fileBorder);
         addFileBtn = new JButton("Add File");
-        addFileBtn.addActionListener(e-> this.addFile());
+        addFileBtn.addActionListener(e-> this.addFile(FileType.DOCUMENT));
         filePanel.add(addFileBtn);
 
 
@@ -105,15 +105,15 @@ public class MainWindow extends JFrame {
     }
 
 
-    private void addFile() {
+    private void addFile(FileType fileType) {
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files", "txt");
         chooser.setFileFilter(filter);
 
         int returnVal = chooser.showOpenDialog(null);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
-            analyser.addFile(chooser.getSelectedFile().getAbsolutePath());
-            fileCount++;
+            analyser.addFile(chooser.getSelectedFile().getAbsolutePath(), fileType);
+            if(fileType == FileType.DOCUMENT){ fileCount++; }
         }
     }
 
