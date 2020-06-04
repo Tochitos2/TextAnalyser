@@ -16,7 +16,7 @@ public class Analyser {
     private final HashMap<String, Integer> words;
     private LinkedHashMap<String, Integer> sortedWords;
     private int wordCount;
-    private boolean inSpeech;
+    private boolean inSpeech, excludeCommon;
     private Restriction restriction;
 
     public Analyser(){
@@ -116,7 +116,7 @@ public class Analyser {
                     word = newWord.toString();
                 }
                 // If not a common word, fits lists and contains at least 1 word character, then add.
-                if(!commonWords.contains(word) // Not a common word
+                if((!excludeCommon || !commonWords.contains(word)) // Not a common word, or filter disabled.
                         && word.matches(".*\\w+.*") // contains at least one word type character
                         && !blackList.contains(word) // Not in blacklist
                         && (whiteList.size() == 0 || whiteList.contains(word))) { // Whitelist empty or contains word
@@ -165,6 +165,8 @@ public class Analyser {
     public void resetWhiteList(){ whiteList = new ArrayList<>(); }
 
     public void resetBlackList(){ blackList = new ArrayList<>(); }
+
+    public void setExcludeCommon(boolean exclude){ excludeCommon = exclude; }
 
 }
 

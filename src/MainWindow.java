@@ -6,6 +6,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
 import java.awt.*;
+import java.io.File;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,10 +23,10 @@ public class MainWindow extends JFrame {
     private final JButton addFileBtn;
     private final JButton addBlackListBtn;
     private final JButton addWhiteListBtn;
-    private JTable table1;
+    private JTable fileTable;
     private JCheckBox checkBox1;
     private JComboBox comboBox1;
-    private JCheckBox excludeCommonChkBx;
+    private final JCheckBox excludeCommonChkBx;
     private JLabel excludeCommonLbl;
 
     private int fileCount;
@@ -41,7 +42,7 @@ public class MainWindow extends JFrame {
         super("Word Ranker");
         contentPane = getContentPane();
         contentPane.setLayout(new GridLayout(3,2));
-        contentPane.setPreferredSize(new Dimension(400,250));
+        contentPane.setPreferredSize(new Dimension(600,300));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // File panel initialisation
@@ -51,6 +52,7 @@ public class MainWindow extends JFrame {
         addFileBtn = new JButton("Add File");
         addFileBtn.addActionListener(e-> this.addFile(FileType.DOCUMENT));
         filePanel.add(addFileBtn);
+        filePanel.add(makeFileTable());
 
 
         // Filter panel initialisation
@@ -63,6 +65,10 @@ public class MainWindow extends JFrame {
         addWhiteListBtn = new JButton("Add Whitelist");
         addWhiteListBtn.addActionListener(e -> this.addFile(FileType.WHITELIST));
         filterPanel.add(addWhiteListBtn);
+        excludeCommonChkBx = new JCheckBox("Exclude 200 most common words in English language.", true);
+        excludeCommonChkBx.addItemListener(e -> changeCommonFilter(e.getStateChange()));
+        filterPanel.add(excludeCommonChkBx);
+
 
 
         // Action panel initialisation
@@ -79,6 +85,23 @@ public class MainWindow extends JFrame {
         contentPane.add(actionPanel);
         pack();
         setVisible(true);
+    }
+
+    private JScrollPane makeFileTable() {
+
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("FileName");
+        fileTable = new JTable(model);
+        fileTable.setBounds(0, 0, 300, 80);
+
+        JScrollPane scrollPane = new JScrollPane(fileTable);
+        scrollPane.setSize(300,100);
+
+        return scrollPane;
+    }
+
+    private void changeCommonFilter(int stateChange) {
+        analyser.setExcludeCommon(stateChange == 1);
     }
 
     private JScrollPane createResultsTable(LinkedHashMap<String, Integer> data) {
@@ -115,8 +138,15 @@ public class MainWindow extends JFrame {
 
         int returnVal = chooser.showOpenDialog(null);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
-            analyser.addFile(chooser.getSelectedFile().getAbsolutePath(), fileType);
-            if(fileType == FileType.DOCUMENT){ fileCount++; }
+            String path = chooser.getSelectedFile().getAbsolutePath();
+            analyser.addFile(path, fileType);
+            if(fileType == FileType.DOCUMENT){
+                File file = new File(path);
+                String[] fileName = { file.getName() };
+                DefaultTableModel model = (DefaultTableModel)fileTable.getModel(); // Safe cast, original type compiler is simply unaware.
+                model.addRow(fileName);
+                fileCount++;
+            }
         }
     }
 
