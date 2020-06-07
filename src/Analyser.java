@@ -13,7 +13,7 @@ public class Analyser {
     private ArrayList<String> whiteList;
     private final ArrayList<String> documentPaths;
     private final String commonWordsPath;
-    private final HashMap<String, Integer> words;
+    private HashMap<String, Integer> words;
     private LinkedHashMap<String, Integer> sortedWords;
     private int wordCount;
     private boolean inSpeech, excludeCommon;
@@ -84,6 +84,7 @@ public class Analyser {
     }
 
     public void analyse(){
+        words = new HashMap<String, Integer>();
         for(String path: documentPaths){
 
             // Scanner initialisation
