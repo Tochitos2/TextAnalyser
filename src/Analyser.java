@@ -169,6 +169,13 @@ public class Analyser {
 
     public void setExcludeCommon(boolean exclude){ excludeCommon = exclude; }
 
+    public boolean hasWhiteList(){
+        return (whiteList.size() != 0);
+    }
+
+    public boolean hasBlackList(){
+        return (blackList.size() != 0);
+    }
 }
 
 

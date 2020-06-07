@@ -77,7 +77,7 @@ public class MainWindow extends JFrame {
         filterConstraints.gridx = 0;
         filterConstraints.gridy = 0;
         filterConstraints.insets = new Insets(10,10,0,7);
-        addBlackListBtn.addActionListener(e -> this.addFile(FileType.BLACKLIST));
+        addBlackListBtn.addActionListener(e -> this.handleFileButton(FileType.BLACKLIST));
         filterPanel.add(addBlackListBtn, filterConstraints);
         addWhiteListBtn = new JButton("Add Whitelist");
         filterConstraints.fill = GridBagConstraints.BOTH;
@@ -86,7 +86,7 @@ public class MainWindow extends JFrame {
         filterConstraints.gridx = 1;
         filterConstraints.gridy = 0;
         filterConstraints.insets = new Insets(10,7,0,10);
-        addWhiteListBtn.addActionListener(e -> this.addFile(FileType.WHITELIST));
+        addWhiteListBtn.addActionListener(e -> this.handleFileButton(FileType.WHITELIST));
         filterPanel.add(addWhiteListBtn, filterConstraints);
         excludeCommonChkBx = new JCheckBox("Exclude 200 most common words in English language.", true);
         filterConstraints.gridwidth = 2;
@@ -130,6 +130,31 @@ public class MainWindow extends JFrame {
         contentPane.add(actionPanel, paneConstraints);
         pack();
         setVisible(true);
+    }
+
+    private void handleFileButton(FileType listType) {
+        if(listType == FileType.WHITELIST) {
+            if(!analyser.hasWhiteList()){
+                this.addFile(FileType.WHITELIST);
+                if(analyser.hasWhiteList()) addWhiteListBtn.setText("Remove Whitelist");
+            }
+            else{
+                analyser.resetWhiteList();
+                addWhiteListBtn.setText("Add Whitelist");
+            }
+
+        }
+        else if(listType == FileType.BLACKLIST) {
+            if(!analyser.hasBlackList()){
+                this.addFile(FileType.BLACKLIST);
+                if(analyser.hasBlackList()) addBlackListBtn.setText("Remove Blacklist");
+            }
+            else{
+                analyser.resetBlackList();
+                addBlackListBtn.setText("Add Blacklist");
+            }
+
+        }
     }
 
     private JScrollPane makeFileTable() {
