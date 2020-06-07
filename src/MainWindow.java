@@ -30,6 +30,7 @@ public class MainWindow extends JFrame {
     private int fileCount;
     private final Desktop desktop = null;
     private final Analyser analyser = new Analyser();
+    private boolean firstRun = true;
 
     public static void main(String[] args){
         MainWindow window = new MainWindow();
@@ -153,7 +154,6 @@ public class MainWindow extends JFrame {
                 analyser.resetBlackList();
                 addBlackListBtn.setText("Add Blacklist");
             }
-
         }
     }
 
@@ -223,6 +223,7 @@ public class MainWindow extends JFrame {
     }
 
     private void showResults(){
+
         analyser.analyse();
         LinkedHashMap<String, Integer> results = analyser.getSortedList();
         JScrollPane scrollPane = createResultsTable(results);
@@ -233,6 +234,10 @@ public class MainWindow extends JFrame {
         scrollConstraints.weighty = 1;
         scrollConstraints.weightx = 1;
         scrollConstraints.insets = new Insets(5,5,5,5);
+
+        // Clear result panel if not first run
+        if(!firstRun) resultsPanel.removeAll();
+
         resultsPanel.add(scrollPane, scrollConstraints);
 
         paneConstraints.gridx = 1;
@@ -242,6 +247,8 @@ public class MainWindow extends JFrame {
         paneConstraints.gridheight = 3;
         contentPane.add(resultsPanel, paneConstraints);
         pack();
+
+        firstRun = false;
     }
 
 }
