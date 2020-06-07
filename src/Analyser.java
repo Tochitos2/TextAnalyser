@@ -28,6 +28,7 @@ public class Analyser {
         sortedWords = new LinkedHashMap<String, Integer>();
         commonWordsPath = "src/CommonWords.txt";
         inSpeech = false;
+        excludeCommon = true;
         restriction = Restriction.TEXT;
 
         LoadCommonWords();

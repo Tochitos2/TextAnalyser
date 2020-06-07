@@ -5,12 +5,10 @@ import javax.swing.border.Border;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.io.File;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MainWindow extends JFrame {
 
@@ -28,7 +26,7 @@ public class MainWindow extends JFrame {
     private JComboBox comboBox1;
     private final JCheckBox excludeCommonChkBx;
     private JLabel excludeCommonLbl;
-
+    private final GridBagConstraints paneConstraints = new GridBagConstraints();
     private int fileCount;
     private final Desktop desktop = null;
     private final Analyser analyser = new Analyser();
@@ -41,48 +39,95 @@ public class MainWindow extends JFrame {
         // Container initialisation
         super("Word Ranker");
         contentPane = getContentPane();
-        contentPane.setLayout(new GridLayout(3,2));
-        contentPane.setPreferredSize(new Dimension(600,300));
+        contentPane.setLayout(new GridBagLayout());
+
+        contentPane.setPreferredSize(new Dimension(700,400));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // File panel initialisation
         filePanel = new JPanel(new GridBagLayout());
+        GridBagConstraints fileConstraints = new GridBagConstraints();
         Border fileBorder = BorderFactory.createTitledBorder("Files");
         filePanel.setBorder(fileBorder);
         addFileBtn = new JButton("Add File");
+        fileConstraints.fill = GridBagConstraints.BOTH;
+        fileConstraints.anchor = GridBagConstraints.PAGE_START;
+        fileConstraints.weightx = 0.1;
+        fileConstraints.insets = new Insets(5,10, 5, 5);
+        fileConstraints.gridx = 0;
         addFileBtn.addActionListener(e-> this.addFile(FileType.DOCUMENT));
-        filePanel.add(addFileBtn);
-        filePanel.add(makeFileTable());
+        filePanel.add(addFileBtn, fileConstraints);
+        fileConstraints.fill = GridBagConstraints.BOTH;
+        fileConstraints.weightx = 0.9;
+        fileConstraints.weighty = 1;
+        fileConstraints.gridx = 1;
+        fileConstraints.insets = new Insets(5,5, 5, 10);
+        filePanel.add(makeFileTable(), fileConstraints);
 
 
         // Filter panel initialisation
         filterPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints filterConstraints = new GridBagConstraints();
         Border filterBorder = BorderFactory.createTitledBorder("Filters");
         filterPanel.setBorder(filterBorder);
         addBlackListBtn = new JButton("Add Blacklist");
+        filterConstraints.fill = GridBagConstraints.BOTH;
+        filterConstraints.weightx = 0.5;
+        filterConstraints.weighty = 0.8;
+        filterConstraints.gridx = 0;
+        filterConstraints.gridy = 0;
+        filterConstraints.insets = new Insets(10,10,0,7);
         addBlackListBtn.addActionListener(e -> this.addFile(FileType.BLACKLIST));
-        filterPanel.add(addBlackListBtn);
+        filterPanel.add(addBlackListBtn, filterConstraints);
         addWhiteListBtn = new JButton("Add Whitelist");
+        filterConstraints.fill = GridBagConstraints.BOTH;
+        filterConstraints.weightx = 0.5;
+        filterConstraints.weighty = 0.8;
+        filterConstraints.gridx = 1;
+        filterConstraints.gridy = 0;
+        filterConstraints.insets = new Insets(10,7,0,10);
         addWhiteListBtn.addActionListener(e -> this.addFile(FileType.WHITELIST));
-        filterPanel.add(addWhiteListBtn);
+        filterPanel.add(addWhiteListBtn, filterConstraints);
         excludeCommonChkBx = new JCheckBox("Exclude 200 most common words in English language.", true);
+        filterConstraints.gridwidth = 2;
+        filterConstraints.weighty = 0.2;
+        filterConstraints.insets = new Insets(5,10,0,0);
+        filterConstraints.gridx = 0;
+        filterConstraints.gridy = 1;
         excludeCommonChkBx.addItemListener(e -> changeCommonFilter(e.getStateChange()));
-        filterPanel.add(excludeCommonChkBx);
+        filterPanel.add(excludeCommonChkBx, filterConstraints);
 
 
 
         // Action panel initialisation
         actionPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints actionConstraints = new GridBagConstraints();
         analyseBtn = new JButton("Analyse Text");
+        actionConstraints.fill = GridBagConstraints.BOTH;
+        actionConstraints.weightx = 0.5;
+        actionConstraints.weighty = 0.5;
+        actionConstraints.gridx = 1;
+        actionConstraints.gridy = 0;
+        actionConstraints.insets = new Insets(15,15,10,15);
         analyseBtn.addActionListener(e-> this.showResults());
-        actionPanel.add(analyseBtn);
+        actionPanel.add(analyseBtn, actionConstraints);
 
         // Results panel initialisation
         resultsPanel = new JPanel(new GridLayout());
 
-        contentPane.add(filePanel);
-        contentPane.add(filterPanel);
-        contentPane.add(actionPanel);
+        // Panel addition to content pane.
+        paneConstraints.fill = GridBagConstraints.BOTH;
+        paneConstraints.gridx = 0;
+        paneConstraints.weightx = 0.25;
+        paneConstraints.gridy = 0;
+        paneConstraints.weighty = 0.7;
+        contentPane.add(filePanel, paneConstraints);
+        paneConstraints.gridy = 1;
+        paneConstraints.weighty = 0.2;
+        contentPane.add(filterPanel, paneConstraints);
+        paneConstraints.gridy = 2;
+        paneConstraints.weighty = 0.1;
+        contentPane.add(actionPanel, paneConstraints);
         pack();
         setVisible(true);
     }
@@ -92,7 +137,7 @@ public class MainWindow extends JFrame {
         DefaultTableModel model = new DefaultTableModel();
         model.addColumn("FileName");
         fileTable = new JTable(model);
-        fileTable.setBounds(0, 0, 300, 80);
+
 
         JScrollPane scrollPane = new JScrollPane(fileTable);
         scrollPane.setSize(300,100);
@@ -122,11 +167,13 @@ public class MainWindow extends JFrame {
             Object[] rowData = {rank, key, data.get(key)};
             tableModel.insertRow(tableModel.getRowCount(), rowData);
             rank++;
-
-            //TODO: Remove debug output
-            System.out.println(rowData[0] + ". " + rowData[1] + ": " + rowData[2]);
         }
 
+        table.setRowHeight(20);
+        TableColumnModel columnModel = table.getColumnModel();
+        columnModel.getColumn(0).setPreferredWidth(40);
+        columnModel.getColumn(1).setPreferredWidth(100);
+        columnModel.getColumn(2).setPreferredWidth(100);
         return new JScrollPane(table);
     }
 
@@ -154,9 +201,22 @@ public class MainWindow extends JFrame {
         analyser.analyse();
         LinkedHashMap<String, Integer> results = analyser.getSortedList();
         JScrollPane scrollPane = createResultsTable(results);
+        GridBagConstraints scrollConstraints = new GridBagConstraints();
+        scrollConstraints.fill = GridBagConstraints.BOTH;
+        scrollConstraints.gridx = 0;
+        scrollConstraints.gridy = 0;
+        scrollConstraints.weighty = 1;
+        scrollConstraints.weightx = 1;
+        scrollConstraints.insets = new Insets(5,5,5,5);
+        resultsPanel.add(scrollPane, scrollConstraints);
 
-        resultsPanel.add(scrollPane);
-        resultsPanel.setVisible(true);
+        paneConstraints.gridx = 1;
+        paneConstraints.gridy = 0;
+        paneConstraints.weighty = 1;
+        paneConstraints.weightx = 1;
+        paneConstraints.gridheight = 3;
+        contentPane.add(resultsPanel, paneConstraints);
+        pack();
     }
 
 }
