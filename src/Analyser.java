@@ -16,7 +16,7 @@ public class Analyser {
     private HashMap<String, Integer> words;
     private LinkedHashMap<String, Integer> sortedWords;
     private int wordCount;
-    private boolean inSpeech, excludeCommon;
+    private boolean excludeCommon;
     private Restriction restriction;
 
     public Analyser(){
@@ -27,7 +27,6 @@ public class Analyser {
         words = new HashMap<String, Integer>();
         sortedWords = new LinkedHashMap<String, Integer>();
         commonWordsPath = "src/CommonWords.txt";
-        inSpeech = false;
         excludeCommon = true;
         restriction = Restriction.TEXT;
 
@@ -85,6 +84,7 @@ public class Analyser {
 
     public void analyse(){
         words = new HashMap<String, Integer>();
+        boolean inSpeech = false;
         for(String path: documentPaths){
 
             // Scanner initialisation
@@ -99,14 +99,21 @@ public class Analyser {
             // scan in words applying appropriate filters.
             while(scanner != null && scanner.hasNext()){
                 // Filters out punctuation then capitalises in text case.
-                String word = capitalise(scanner.next().replaceAll("[^a-zA-Z'-]", ""));
+                String word = capitalise(scanner.next());
 
                 // If restrictions are applied words must be parsed for speech marks.
                 if(restriction == Restriction.DIALOGUE || restriction == Restriction.NARRATION) {
                     StringBuilder newWord = new StringBuilder();
+
                     for (int i = 0; i < word.length(); i++) {
-                        if (word.charAt(i) == '\"') {
-                            inSpeech = !inSpeech; //Flip whether in dialogue on speech mark.
+                        if(word.charAt(i) == '“' ){
+                            inSpeech = true;
+                        }
+                        else if(word.charAt(i) == '”') {
+                             inSpeech = false;
+                        }
+                        else if (word.charAt(i) == '\"'){
+                            inSpeech = !inSpeech;
                         }
                         // Builds the word according to whether the analyser is set to count dialogue or vice versa.
                         if (restriction == Restriction.DIALOGUE && inSpeech) {
@@ -117,6 +124,8 @@ public class Analyser {
                     }
                     word = newWord.toString();
                 }
+                // Remove punctuation. Must be in before this point for dialogue tracking.
+               word = capitalise(word.replaceAll("[^a-zA-Z'-]", ""));
                 // If not a common word, fits lists and contains at least 1 word character, then add.
                 if((!excludeCommon || !commonWords.contains(word)) // Not a common word, or filter disabled.
                         && word.matches(".*\\w+.*") // contains at least one word type character
@@ -162,7 +171,19 @@ public class Analyser {
         return wordCount;
     }
 
-    public void setRestriction(Restriction restriction) { this.restriction = restriction; }
+    public void setRestriction(String restriction){
+        switch (restriction){
+            case "All Text":
+                this.restriction = Restriction.TEXT;
+                break;
+            case "Dialogue Only":
+                this.restriction = Restriction.DIALOGUE;
+                break;
+            case "Narration Only":
+                this.restriction = Restriction.NARRATION;
+                break;
+        }
+    }
 
     public void resetWhiteList(){ whiteList = new ArrayList<>(); }
 

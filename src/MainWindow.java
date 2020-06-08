@@ -23,9 +23,10 @@ public class MainWindow extends JFrame {
     private final JButton addWhiteListBtn;
     private JTable fileTable;
     private JCheckBox checkBox1;
-    private JComboBox comboBox1;
+    private final JComboBox restrictionComboBox;
     private final JCheckBox excludeCommonChkBx;
     private JLabel excludeCommonLbl;
+    private final JLabel dialogueLbl;
     private final GridBagConstraints paneConstraints = new GridBagConstraints();
     private int fileCount;
     private final Desktop desktop = null;
@@ -44,6 +45,8 @@ public class MainWindow extends JFrame {
 
         contentPane.setPreferredSize(new Dimension(700,400));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        //TODO: Add file removal button
 
         // File panel initialisation
         filePanel = new JPanel(new GridBagLayout());
@@ -65,7 +68,6 @@ public class MainWindow extends JFrame {
         fileConstraints.insets = new Insets(5,5, 5, 10);
         filePanel.add(makeFileTable(), fileConstraints);
 
-
         // Filter panel initialisation
         filterPanel = new JPanel(new GridBagLayout());
         GridBagConstraints filterConstraints = new GridBagConstraints();
@@ -74,7 +76,7 @@ public class MainWindow extends JFrame {
         addBlackListBtn = new JButton("Add Blacklist");
         filterConstraints.fill = GridBagConstraints.BOTH;
         filterConstraints.weightx = 0.5;
-        filterConstraints.weighty = 0.8;
+        filterConstraints.weighty = 0.6;
         filterConstraints.gridx = 0;
         filterConstraints.gridy = 0;
         filterConstraints.insets = new Insets(10,10,0,7);
@@ -83,7 +85,7 @@ public class MainWindow extends JFrame {
         addWhiteListBtn = new JButton("Add Whitelist");
         filterConstraints.fill = GridBagConstraints.BOTH;
         filterConstraints.weightx = 0.5;
-        filterConstraints.weighty = 0.8;
+        filterConstraints.weighty = 0.6;
         filterConstraints.gridx = 1;
         filterConstraints.gridy = 0;
         filterConstraints.insets = new Insets(10,7,0,10);
@@ -97,6 +99,23 @@ public class MainWindow extends JFrame {
         filterConstraints.gridy = 1;
         excludeCommonChkBx.addItemListener(e -> changeCommonFilter(e.getStateChange()));
         filterPanel.add(excludeCommonChkBx, filterConstraints);
+        filterConstraints.gridwidth = 1;
+        filterConstraints.gridx = 0;
+        filterConstraints.gridy = 2;
+        filterConstraints.weightx = 0.3;
+        filterConstraints.weighty = 0.2;
+        dialogueLbl = new JLabel("Count:");
+        filterPanel.add(dialogueLbl, filterConstraints);
+        filterConstraints.gridx = 0;
+        filterConstraints.gridy = 2;
+        filterConstraints.weightx = 0.2;
+        filterConstraints.weighty = 0.2;
+        filterConstraints.insets = new Insets(5,60,5,5);
+        String[] comboBoxOptions = { "All Text", "Dialogue Only", "Narration Only" };
+        restrictionComboBox = new JComboBox(comboBoxOptions);
+        restrictionComboBox.setSelectedIndex(0);
+        restrictionComboBox.addItemListener(e -> analyser.setRestriction(restrictionComboBox.getSelectedItem().toString()));
+        filterPanel.add(restrictionComboBox, filterConstraints);
 
 
 
