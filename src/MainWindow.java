@@ -1,5 +1,3 @@
-import com.sun.xml.internal.ws.util.QNameMap;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -21,6 +19,7 @@ public class MainWindow extends JFrame {
     private final JButton addFileBtn;
     private final JButton addBlackListBtn;
     private final JButton addWhiteListBtn;
+    private final JButton removeFileBtn;
     private JTable fileTable;
     private JCheckBox checkBox1;
     private final JComboBox restrictionComboBox;
@@ -48,7 +47,7 @@ public class MainWindow extends JFrame {
 
         //TODO: Add file removal button
 
-        // File panel initialisation
+        // file panel initialisation
         filePanel = new JPanel(new GridBagLayout());
         GridBagConstraints fileConstraints = new GridBagConstraints();
         Border fileBorder = BorderFactory.createTitledBorder("Files");
@@ -57,14 +56,23 @@ public class MainWindow extends JFrame {
         fileConstraints.fill = GridBagConstraints.BOTH;
         fileConstraints.anchor = GridBagConstraints.PAGE_START;
         fileConstraints.weightx = 0.1;
+        fileConstraints.weighty = 0.5;
         fileConstraints.insets = new Insets(5,10, 5, 5);
         fileConstraints.gridx = 0;
-        addFileBtn.addActionListener(e-> this.addFile(FileType.DOCUMENT));
+        addFileBtn.addActionListener(e-> this.addDocument(FileType.DOCUMENT));
         filePanel.add(addFileBtn, fileConstraints);
+        removeFileBtn = new JButton("Remove File");
+        removeFileBtn.setEnabled(false);
+        removeFileBtn.addActionListener(e -> removeDocument());
+        fileConstraints.gridx = 0;
+        fileConstraints.gridy = 1;
+        filePanel.add(removeFileBtn, fileConstraints);
         fileConstraints.fill = GridBagConstraints.BOTH;
         fileConstraints.weightx = 0.9;
         fileConstraints.weighty = 1;
         fileConstraints.gridx = 1;
+        fileConstraints.gridy = 0;
+        fileConstraints.gridheight = 2;
         fileConstraints.insets = new Insets(5,5, 5, 10);
         filePanel.add(makeFileTable(), fileConstraints);
 
@@ -130,6 +138,7 @@ public class MainWindow extends JFrame {
         actionConstraints.gridy = 0;
         actionConstraints.insets = new Insets(15,15,10,15);
         analyseBtn.addActionListener(e-> this.showResults());
+        analyseBtn.setEnabled(false);
         actionPanel.add(analyseBtn, actionConstraints);
 
         // Results panel initialisation
@@ -152,10 +161,21 @@ public class MainWindow extends JFrame {
         setVisible(true);
     }
 
+    private void removeDocument() {
+        String filename = fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0).toString();
+        analyser.removeDocument(filename);
+        ((DefaultTableModel)fileTable.getModel()).removeRow(fileTable.getSelectedRow());
+        fileCount--;
+        if(fileCount < 1) {
+            removeFileBtn.setEnabled(false);
+            analyseBtn.setEnabled(false);
+        }
+    }
+
     private void handleFileButton(FileType listType) {
         if(listType == FileType.WHITELIST) {
             if(!analyser.hasWhiteList()){
-                this.addFile(FileType.WHITELIST);
+                this.addDocument(FileType.WHITELIST);
                 if(analyser.hasWhiteList()) addWhiteListBtn.setText("Remove Whitelist");
             }
             else{
@@ -166,7 +186,7 @@ public class MainWindow extends JFrame {
         }
         else if(listType == FileType.BLACKLIST) {
             if(!analyser.hasBlackList()){
-                this.addFile(FileType.BLACKLIST);
+                this.addDocument(FileType.BLACKLIST);
                 if(analyser.hasBlackList()) addBlackListBtn.setText("Remove Blacklist");
             }
             else{
@@ -222,7 +242,7 @@ public class MainWindow extends JFrame {
     }
 
 
-    private void addFile(FileType fileType) {
+    private void addDocument(FileType fileType) {
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files", "txt");
         chooser.setFileFilter(filter);
@@ -237,6 +257,8 @@ public class MainWindow extends JFrame {
                 DefaultTableModel model = (DefaultTableModel)fileTable.getModel(); // Safe cast, original type compiler is simply unaware.
                 model.addRow(fileName);
                 fileCount++;
+                removeFileBtn.setEnabled(true);
+                analyseBtn.setEnabled(true);
             }
         }
     }

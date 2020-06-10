@@ -185,6 +185,12 @@ public class Analyser {
         }
     }
 
+    // Remove all files with a given filename.
+    public void removeDocument(String filename){
+        // Splits on \ to get last section of address, aka the filename.
+        documentPaths.removeIf(p -> (p.split("\\\\")[p.split("\\\\").length-1]).contains(filename));
+    }
+
     public void resetWhiteList(){ whiteList = new ArrayList<>(); }
 
     public void resetBlackList(){ blackList = new ArrayList<>(); }
