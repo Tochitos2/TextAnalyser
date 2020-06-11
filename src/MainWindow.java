@@ -335,7 +335,7 @@ public class MainWindow extends JFrame {
 
         paneConstraints.gridx = 1;
         paneConstraints.gridy = 0;
-        paneConstraints.weighty = 1;
+        paneConstraints.weighty = 0.8;
         paneConstraints.weightx = 1;
         paneConstraints.gridheight = 3;
         contentPane.add(resultsPanel, paneConstraints);
