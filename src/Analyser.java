@@ -8,6 +8,7 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class Analyser {
+    //region Fields
     private final ArrayList<String> commonWords;
     private ArrayList<String> blackList;
     private ArrayList<String> whiteList;
@@ -18,8 +19,11 @@ public class Analyser {
     private int wordCount;
     private boolean excludeCommon;
     private Restriction restriction;
+    //endregion
 
+    // Constructor
     public Analyser(){
+
         commonWords = new ArrayList<String>();
         documentPaths = new ArrayList<String>();
         blackList = new ArrayList<String>();
@@ -33,22 +37,13 @@ public class Analyser {
         LoadCommonWords();
     }
 
-    public void LoadCommonWords(){
+    //region File Loading
 
-        File file = new File(commonWordsPath);
-        Scanner scanner = null;
-        try {
-            scanner = new Scanner(file);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        while(scanner != null && scanner.hasNextLine()){
-            commonWords.add(scanner.nextLine());
-        }
-    }
-
-
+    /**
+     * Loads list files, and adds document paths to list.
+     * @param path The filepath
+     * @param fileType Specifies document, blacklist, or whitelist.
+     */
     public void addFile(String path, FileType fileType) {
 
         // Only read the file if it's not the document, those should be read at final step with filters in place.
@@ -82,6 +77,40 @@ public class Analyser {
         }
     }
 
+    /**
+     * Remove all files with a given filename.
+     * @param filename The name of the file to remove, including file extension.
+     */
+    public void removeDocument(String filename){
+        // Splits on \ to get last section of address, aka the filename.
+        documentPaths.removeIf(p -> (p.split("\\\\")[p.split("\\\\").length-1]).contains(filename));
+    }
+
+    /**
+     * Loads list of common words from specified filepath.
+     */
+    public void LoadCommonWords(){
+
+        File file = new File(commonWordsPath);
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(file);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        while(scanner != null && scanner.hasNextLine()){
+            commonWords.add(scanner.nextLine());
+        }
+    }
+
+    //endregion
+
+    //region File Parsing & Analysis
+
+    /**
+     * Reads all documents and adds words and occurrence number to unsorted hashmap, obeying filter rules and normalising text.
+     */
     public void analyse(){
         words = new HashMap<String, Integer>();
         boolean inSpeech = false;
@@ -144,6 +173,10 @@ public class Analyser {
         }
     }
 
+    /**
+     * Takes the unsorted list and sorts it by occurrence descending
+     * @return returns a sorted linkedhashmap.
+     */
     public LinkedHashMap<String, Integer> getSortedList(){
         sortedWords =  words.entrySet()
                 .stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
@@ -155,8 +188,12 @@ public class Analyser {
         return sortedWords;
     }
 
-    private String capitalise(String word)
-    {
+    /**
+     * Capitalises the first character of a string, and lowercases all subsequent characters.
+     * @param word The string to be capitalised
+     * @return Returns the string in capitalised form.
+     */
+    private String capitalise(String word) {
         if(word.length() > 1) {
             word = word.substring(0, 1).toUpperCase() +
                     word.substring(1).toLowerCase();
@@ -167,9 +204,25 @@ public class Analyser {
         return word;
     }
 
+    //endregion
+
+    //region Getters
+
     public int getWordCount(){
         return wordCount;
     }
+
+    public boolean hasWhiteList(){
+        return (whiteList.size() != 0);
+    }
+
+    public boolean hasBlackList(){
+        return (blackList.size() != 0);
+    }
+
+    ///endregion
+
+    //region Setters
 
     public void setRestriction(String restriction){
         switch (restriction){
@@ -185,25 +238,13 @@ public class Analyser {
         }
     }
 
-    // Remove all files with a given filename.
-    public void removeDocument(String filename){
-        // Splits on \ to get last section of address, aka the filename.
-        documentPaths.removeIf(p -> (p.split("\\\\")[p.split("\\\\").length-1]).contains(filename));
-    }
-
     public void resetWhiteList(){ whiteList = new ArrayList<>(); }
 
     public void resetBlackList(){ blackList = new ArrayList<>(); }
 
     public void setExcludeCommon(boolean exclude){ excludeCommon = exclude; }
 
-    public boolean hasWhiteList(){
-        return (whiteList.size() != 0);
-    }
-
-    public boolean hasBlackList(){
-        return (blackList.size() != 0);
-    }
+    //endregion
 }
 
 

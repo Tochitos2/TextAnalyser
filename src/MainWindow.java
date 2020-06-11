@@ -4,13 +4,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
 import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
 import java.awt.*;
 import java.io.File;
 import java.util.*;
 
 public class MainWindow extends JFrame {
 
+    //region Fields
     private final Container contentPane;
     private final JPanel filePanel;
     private final JPanel filterPanel;
@@ -32,6 +32,7 @@ public class MainWindow extends JFrame {
     private final Desktop desktop = null;
     private final Analyser analyser = new Analyser();
     private boolean firstRun = true;
+    //endregion
 
     public static void main(String[] args){
         MainWindow window = new MainWindow();
@@ -59,7 +60,7 @@ public class MainWindow extends JFrame {
         fileConstraints.weighty = 0.5;
         fileConstraints.insets = new Insets(5,10, 5, 5);
         fileConstraints.gridx = 0;
-        addFileBtn.addActionListener(e-> this.addDocument(FileType.DOCUMENT));
+        addFileBtn.addActionListener(e-> this.addFile(FileType.DOCUMENT));
         filePanel.add(addFileBtn, fileConstraints);
         removeFileBtn = new JButton("Remove File");
         removeFileBtn.setEnabled(false);
@@ -88,7 +89,7 @@ public class MainWindow extends JFrame {
         filterConstraints.gridx = 0;
         filterConstraints.gridy = 0;
         filterConstraints.insets = new Insets(10,10,0,7);
-        addBlackListBtn.addActionListener(e -> this.handleFileButton(FileType.BLACKLIST));
+        addBlackListBtn.addActionListener(e -> this.handleFilterButton(FileType.BLACKLIST));
         filterPanel.add(addBlackListBtn, filterConstraints);
         addWhiteListBtn = new JButton("Add Whitelist");
         filterConstraints.fill = GridBagConstraints.BOTH;
@@ -97,7 +98,7 @@ public class MainWindow extends JFrame {
         filterConstraints.gridx = 1;
         filterConstraints.gridy = 0;
         filterConstraints.insets = new Insets(10,7,0,10);
-        addWhiteListBtn.addActionListener(e -> this.handleFileButton(FileType.WHITELIST));
+        addWhiteListBtn.addActionListener(e -> this.handleFilterButton(FileType.WHITELIST));
         filterPanel.add(addWhiteListBtn, filterConstraints);
         excludeCommonChkBx = new JCheckBox("Exclude 200 most common words in English language.", true);
         filterConstraints.gridwidth = 2;
@@ -162,6 +163,54 @@ public class MainWindow extends JFrame {
         //endregion
     }
 
+    //region Document Handling
+
+    /**
+     * Creates the document file table.
+     * @return JScrollPane containing document list in JTable.
+     */
+    private JScrollPane makeFileTable() {
+
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("FileName");
+        fileTable = new JTable(model);
+        fileTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        fileTable.getSelectionModel().addListSelectionListener( e -> removeFileBtn.setEnabled(true));
+
+        JScrollPane scrollPane = new JScrollPane(fileTable);
+        scrollPane.setSize(300,100);
+
+        return scrollPane;
+    }
+
+    /**
+     * Handles pop-up file chooser dialogue and passes chosen file to analyser.
+     * @param fileType Specifies whether the file is a document, blacklist or whitelist.
+     */
+    private void addFile(FileType fileType) {
+        JFileChooser chooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files", "txt");
+        chooser.setFileFilter(filter);
+
+        int returnVal = chooser.showOpenDialog(null);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            String path = chooser.getSelectedFile().getAbsolutePath();
+            analyser.addFile(path, fileType);
+            if(fileType == FileType.DOCUMENT){
+                File file = new File(path);
+                String[] fileName = { file.getName() };
+                DefaultTableModel model = (DefaultTableModel)fileTable.getModel(); // Safe cast, original type compiler is simply unaware.
+                model.addRow(fileName);
+                fileCount++;
+                removeFileBtn.setEnabled(fileCount == 1 || (fileTable.getSelectedRow() != -1));
+                analyseBtn.setEnabled(true);
+            }
+        }
+    }
+
+    /**
+     * Removes the selected document or only document if singular.
+     */
     private void removeDocument() {
         String filename;
         int row;
@@ -186,10 +235,18 @@ public class MainWindow extends JFrame {
 
     }
 
-    private void handleFileButton(FileType listType) {
+    //endregion
+
+    //region Filter Handling
+
+    /**
+     * Adds list to analyser and updates UI state.
+     * @param listType
+     */
+    private void handleFilterButton(FileType listType) {
         if(listType == FileType.WHITELIST) {
             if(!analyser.hasWhiteList()){
-                this.addDocument(FileType.WHITELIST);
+                this.addFile(FileType.WHITELIST);
                 if(analyser.hasWhiteList()) addWhiteListBtn.setText("Remove Whitelist");
             }
             else{
@@ -200,7 +257,7 @@ public class MainWindow extends JFrame {
         }
         else if(listType == FileType.BLACKLIST) {
             if(!analyser.hasBlackList()){
-                this.addDocument(FileType.BLACKLIST);
+                this.addFile(FileType.BLACKLIST);
                 if(analyser.hasBlackList()) addBlackListBtn.setText("Remove Blacklist");
             }
             else{
@@ -210,24 +267,23 @@ public class MainWindow extends JFrame {
         }
     }
 
-    private JScrollPane makeFileTable() {
-
-        DefaultTableModel model = new DefaultTableModel();
-        model.addColumn("FileName");
-        fileTable = new JTable(model);
-        fileTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        fileTable.getSelectionModel().addListSelectionListener( e -> removeFileBtn.setEnabled(true));
-
-        JScrollPane scrollPane = new JScrollPane(fileTable);
-        scrollPane.setSize(300,100);
-
-        return scrollPane;
-    }
-
+    /**
+     * Enables or disables the common words filter.
+     * @param stateChange 1 == filter checked, 0 == filter off.
+     */
     private void changeCommonFilter(int stateChange) {
         analyser.setExcludeCommon(stateChange == 1);
     }
 
+    //endregion
+
+    //region Results Handling
+
+    /**
+     * Creates the sorted results JTable within a JScrollPane
+     * @param data The sorted word list with counts.
+     * @return JScrollPane containing the sorted JTable.
+     */
     private JScrollPane createResultsTable(LinkedHashMap<String, Integer> data) {
 
         // Create table data model.
@@ -256,28 +312,9 @@ public class MainWindow extends JFrame {
         return new JScrollPane(table);
     }
 
-
-    private void addDocument(FileType fileType) {
-        JFileChooser chooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files", "txt");
-        chooser.setFileFilter(filter);
-
-        int returnVal = chooser.showOpenDialog(null);
-        if(returnVal == JFileChooser.APPROVE_OPTION) {
-            String path = chooser.getSelectedFile().getAbsolutePath();
-            analyser.addFile(path, fileType);
-            if(fileType == FileType.DOCUMENT){
-                File file = new File(path);
-                String[] fileName = { file.getName() };
-                DefaultTableModel model = (DefaultTableModel)fileTable.getModel(); // Safe cast, original type compiler is simply unaware.
-                model.addRow(fileName);
-                fileCount++;
-                removeFileBtn.setEnabled(fileCount == 1 || (fileTable.getSelectedRow() != -1));
-                analyseBtn.setEnabled(true);
-            }
-        }
-    }
-
+    /**
+     * Retrieves sorted results from analyser, creates the table and scrollpane, then adds to window.
+     */
     private void showResults(){
 
         analyser.analyse();
@@ -307,4 +344,5 @@ public class MainWindow extends JFrame {
         firstRun = false;
     }
 
+    //endregion
 }
