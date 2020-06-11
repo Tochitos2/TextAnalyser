@@ -1,4 +1,4 @@
-# Words of Wheel of Time #
+# Word Analyser #
 
 A Java program for tracking and analysing word usage within multiple text files.
 
