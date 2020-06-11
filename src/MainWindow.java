@@ -4,6 +4,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 import java.awt.*;
 import java.io.File;
 import java.util.*;
@@ -37,6 +38,7 @@ public class MainWindow extends JFrame {
     }
 
     public MainWindow(){
+        //region UI Code
         // Container initialisation
         super("Word Ranker");
         contentPane = getContentPane();
@@ -44,8 +46,6 @@ public class MainWindow extends JFrame {
 
         contentPane.setPreferredSize(new Dimension(700,400));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        //TODO: Add file removal button
 
         // file panel initialisation
         filePanel = new JPanel(new GridBagLayout());
@@ -159,17 +159,31 @@ public class MainWindow extends JFrame {
         contentPane.add(actionPanel, paneConstraints);
         pack();
         setVisible(true);
+        //endregion
     }
 
     private void removeDocument() {
-        String filename = fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0).toString();
-        analyser.removeDocument(filename);
-        ((DefaultTableModel)fileTable.getModel()).removeRow(fileTable.getSelectedRow());
-        fileCount--;
-        if(fileCount < 1) {
-            removeFileBtn.setEnabled(false);
-            analyseBtn.setEnabled(false);
+        String filename;
+        int row;
+        int rowCount = fileTable.getModel().getRowCount();
+        if(rowCount == 1){
+            filename = fileTable.getModel().getValueAt(0,0).toString();
+            row = 0;
         }
+        else{
+            filename = fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0).toString();
+            row = fileTable.getSelectedRow();
+        }
+
+        analyser.removeDocument(filename);
+        ((DefaultTableModel) fileTable.getModel()).removeRow(row);
+        fileCount--;
+        if (fileCount != 1) {
+            removeFileBtn.setEnabled(false);
+
+        }
+        if(fileCount == 0) analyseBtn.setEnabled(false);
+
     }
 
     private void handleFileButton(FileType listType) {
@@ -201,7 +215,8 @@ public class MainWindow extends JFrame {
         DefaultTableModel model = new DefaultTableModel();
         model.addColumn("FileName");
         fileTable = new JTable(model);
-
+        fileTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        fileTable.getSelectionModel().addListSelectionListener( e -> removeFileBtn.setEnabled(true));
 
         JScrollPane scrollPane = new JScrollPane(fileTable);
         scrollPane.setSize(300,100);
@@ -257,7 +272,7 @@ public class MainWindow extends JFrame {
                 DefaultTableModel model = (DefaultTableModel)fileTable.getModel(); // Safe cast, original type compiler is simply unaware.
                 model.addRow(fileName);
                 fileCount++;
-                removeFileBtn.setEnabled(true);
+                removeFileBtn.setEnabled(fileCount == 1 || (fileTable.getSelectedRow() != -1));
                 analyseBtn.setEnabled(true);
             }
         }
