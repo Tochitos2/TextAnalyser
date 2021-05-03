@@ -1,4 +1,4 @@
-# Word Analyser #
+# Text Analyser #
 
 A Java program for tracking and analysing word usage within multiple text files. <br/>
 Includes dialogue/narration only filtering, as well as ignoring common words. Custom white/black lists can be added to further refine results.
